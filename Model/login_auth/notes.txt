@@ -1,0 +1,13 @@
+This program acts as a server waiting for data from the database
+
+Starts by data being sent from the database to main where FastAPI converts the data to python data
+
+app/core contains our config
+app/models contains our ML logic
+apps/services contains the business logic like routing
+apps/schemas.py defines what our data looks like
+apps/main.py is where all the logis is run and meets
+
+Models are trained seperately from the actual application
+
+One-Class SVM has a special folder in saved_models called users which caontains individual models for each user
