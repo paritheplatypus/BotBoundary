@@ -20,7 +20,9 @@ class OneClassSVMModel(Basemodel):
     def load(self):
         # Confirms the user has an existing directory
         if not os.path.exists(self.model_dir):
-            raise FileNotFoundError(f"Model directory {self.model_dir} does not exist")
+            # Early in development, a per-user model may not exist yet.
+            # In that case, raise a clear error so the backend can fall back to generic detection.
+            raise FileNotFoundError(f"Per-user model directory does not exist: {self.model_dir}")
 
         # Load trained SVM and scaler
         self.model = joblib.load(os.path.join(self.model_dir, "ocsvm.pkl"))
@@ -34,7 +36,6 @@ class OneClassSVMModel(Basemodel):
             is_anomaly = true if outside the decision boundary
         """
 
-        # Scale input
         scaled = self.scaler.transform([feature_vector])
 
         # Decision function

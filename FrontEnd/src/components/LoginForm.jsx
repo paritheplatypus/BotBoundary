@@ -1,20 +1,37 @@
 import { useState } from "react";
 import { getBehaviorData } from "../behavior/behaviorTracker";
+import { apiFetch } from "../api/client";
 
 export default function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [status, setStatus] = useState(null);
+  const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    setError(null);
+    setStatus("Submitting...");
 
     const behavior = getBehaviorData();
 
-    console.log("LOGIN PAYLOAD:", {
-      username,
-      password,
-      behavior,
-    });
+    try {
+      const result = await apiFetch("/auth/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password, behavior }),
+      });
+
+      setStatus(
+        `Decision: ${result.decision} | Risk: ${result.risk_score.toFixed(2)} | Model: ${result.model_used}`
+      );
+
+      // TODO: route to dashboard / challenge page.
+      // For now, just show status.
+    } catch (err) {
+      setError(err.message || "Login failed");
+      setStatus(null);
+    }
   };
 
   return (
@@ -34,6 +51,9 @@ export default function LoginForm() {
       />
 
       <button type="submit">Secure Login</button>
+
+      {status && <p className="login-status">{status}</p>}
+      {error && <p className="login-error">{error}</p>}
     </form>
   );
 }
