@@ -6,7 +6,9 @@ After=network.target
 User=ubuntu
 WorkingDirectory=/opt/botboundary/Backend/api
 EnvironmentFile=/opt/botboundary/.env
-ExecStart=/opt/botboundary/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+# Listen on the instance interface so an ALB/NLB target group can reach it.
+# Do NOT open this port to the public internet; restrict inbound to the load balancer SG.
+ExecStart=/opt/botboundary/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers
 Restart=always
 RestartSec=3
 
