@@ -14,8 +14,8 @@ app = FastAPI(title="BotBoundary API", version="1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(settings.cors_origins),
-    allow_credentials=(settings.cors_allow_credentials or settings.auth_mode in ("cookie", "both")),
-    allow_methods=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"]
 )
 

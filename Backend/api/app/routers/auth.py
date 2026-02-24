@@ -16,23 +16,6 @@ db = DBService()
 model = ModelClient()
 
 
-def _get_client_ip(request: Request) -> str | None:
-    """Best-effort client IP extraction behind proxies (API Gateway / ALB / NLB).
-
-    Order:
-    1) X-Forwarded-For (first IP)
-    2) X-Real-IP
-    3) request.client.host
-    """
-    xff = request.headers.get("x-forwarded-for")
-    if xff:
-        return xff.split(",")[0].strip() or None
-    xri = request.headers.get("x-real-ip")
-    if xri:
-        return xri.strip() or None
-    return request.client.host if request.client else None
-
-
 @router.post("/register", response_model=RegisterResponse)
 def register(req: RegisterRequest):
     existing = db.get_user_by_username(req.username)
@@ -69,7 +52,7 @@ def login(req: LoginRequest, response: Response, request: Request):
         "username": user["username"],
         "features": features,
         "behavior": req.behavior,
-        "ip": _get_client_ip(request),
+        "ip": request.client.host if request.client else None,
         "userAgent": request.headers.get("user-agent"),
     }
     db.log_session_summary(session_id=session["sessionId"], summary=summary)
@@ -116,30 +99,24 @@ def login(req: LoginRequest, response: Response, request: Request):
         is_owner=(not is_bot) if registered_user else None,
     )
 
-    token = None
+    # If allowed, set auth cookie
     if decision == "allow":
         token = create_jwt({"user_id": user["userId"], "username": user["username"], "role": user.get("role", "user")})
-
-        # Cookie auth is only reliable when the API is same-site with the frontend.
-        # When using API Gateway's execute-api domain (no purchased custom domain), prefer bearer tokens.
-        if settings.auth_mode in ("cookie", "both"):
-            response.set_cookie(
-                key=settings.jwt_cookie_name,
-                value=token,
-                httponly=True,
-                secure=True if settings.environment != "development" else False,
-                samesite="none" if settings.environment != "development" else "lax",
-                max_age=settings.jwt_ttl_minutes * 60,
-                path="/",
-            )
+        response.set_cookie(
+            key=settings.jwt_cookie_name,
+            value=token,
+            httponly=True,
+            secure=(settings.environment != "development"),
+            samesite="lax",
+            max_age=settings.jwt_ttl_minutes * 60,
+            path="/",
+        )
 
     return LoginResponse(
         decision=decision,
         session_id=session["sessionId"],
         risk_score=risk,
         model_used=model_used,
-        access_token=(token if (token and settings.auth_mode in ("bearer", "both")) else None),
-        token_type=("bearer" if (token and settings.auth_mode in ("bearer", "both")) else None),
     )
 
 
