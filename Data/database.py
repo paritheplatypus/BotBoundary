@@ -11,33 +11,26 @@ Usage:
     from database import create_user, get_user, create_session, log_behavioral_event, get_session_events
 """
 
-import os
 import boto3
 import uuid
 import time
-from boto3.dynamodb.conditions import Key, Attr
+from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
 # --- Setup ---
 
-# Region + table names are configurable so the same code works in dev/prod.
-AWS_REGION = os.getenv('AWS_REGION', os.getenv('AWS_DEFAULT_REGION', 'us-east-1'))
-USERS_TABLE_NAME = os.getenv('USERS_TABLE_NAME', 'Users')
-SESSIONS_TABLE_NAME = os.getenv('SESSIONS_TABLE_NAME', 'Sessions')
-BEHAVIORAL_EVENTS_TABLE_NAME = os.getenv('BEHAVIORAL_EVENTS_TABLE_NAME', 'BehavioralEvents')
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
 
-dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
-
-users_table             = dynamodb.Table(USERS_TABLE_NAME)
-sessions_table          = dynamodb.Table(SESSIONS_TABLE_NAME)
-behavioral_events_table = dynamodb.Table(BEHAVIORAL_EVENTS_TABLE_NAME)
+users_table             = dynamodb.Table('Users')
+sessions_table          = dynamodb.Table('Sessions')
+behavioral_events_table = dynamodb.Table('BehavioralEvents')
 
 
 # ─────────────────────────────────────────────
 # USERS
 # ─────────────────────────────────────────────
 
-def create_user(username: str, password_hash: str, role: str = "user") -> dict:
+def create_user(username: str, password_hash: str) -> dict:
     """
     Create a new user record.
 
@@ -58,7 +51,6 @@ def create_user(username: str, password_hash: str, role: str = "user") -> dict:
         'userId':        user_id,
         'username':      username,
         'passwordHash':  password_hash,
-        'role':          role,   # "user" | "admin"
         'createdAt':     timestamp,
         # Stores the user's learned behavioral baseline (populated after enough sessions)
         'behaviorProfile': {}
@@ -108,20 +100,9 @@ def get_user_by_username(username: str) -> dict:
         user = get_user_by_username("alice@example.com")
     """
     try:
-        # Preferred: query a GSI named "username-index" (PK=username)
-        try:
-            response = users_table.query(
-                IndexName='username-index',
-                KeyConditionExpression=Key('username').eq(username)
-            )
-            items = response.get('Items', [])
-            if items:
-                return items[0]
-        except ClientError:
-            # Fall back to scan if the GSI does not exist
-            pass
-
-        response = users_table.scan(FilterExpression=Attr('username').eq(username))
+        response = users_table.scan(
+            FilterExpression=Key('username').eq(username)
+        )
         items = response.get('Items', [])
         return items[0] if items else None
     except ClientError as e:

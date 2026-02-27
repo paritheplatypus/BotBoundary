@@ -1,14 +1,12 @@
-from __future__ import annotations
-
-import os
-
-import numpy as np
+from app.models.base_model import Basemodel
 import torch
 import torch.nn as nn
-import joblib
-
-from app.models.base_model import Basemodel
+import numpy as np
 from app.core.config import AUTOENCODER_DIR
+
+# import for normalization scaler
+import joblib
+import os
 
 
 class AutoencoderModel(Basemodel):
@@ -67,27 +65,16 @@ class AutoencoderModel(Basemodel):
 
         self.scaler = None
         self.threshold = None
-        self._fallback = False
 
     def load(self):
         """
         Load trained model weights, scaler, and threshold from disk
         This doesn't re-train the model
         """
-        weights_path = os.path.join(self.model_path, "autoencoder.pt")
-        scaler_path = os.path.join(self.model_path, "scaler.pkl")
-        threshold_path = os.path.join(self.model_path, "threshold.npy")
+        self.model.load_state_dict(torch.load(os.path.join(self.model_path, "autoencoder.pt"), map_location=self.device))
 
-        # If artifacts are missing (common early in the project), fall back to a simple heuristic.
-        if not (os.path.exists(weights_path) and os.path.exists(scaler_path) and os.path.exists(threshold_path)):
-            self._fallback = True
-            self.threshold = 1.0
-            return
-
-        self.model.load_state_dict(torch.load(weights_path, map_location=self.device))
-        self.scaler = joblib.load(scaler_path)
-        thr = np.load(threshold_path)
-        self.threshold = float(thr.item() if hasattr(thr, "item") else thr)
+        self.scaler = joblib.load(os.path.join(self.model_path, "scaler.pkl"))
+        self.threshold = np.load(os.path.join(self.model_path, "threshold.npy"))
         self.model.eval()
 
 
@@ -103,56 +90,28 @@ class AutoencoderModel(Basemodel):
         }
         """
 
-        if self._fallback:
-            # Lightweight heuristic (keeps the pipeline functional until training artifacts exist).
-            # Feature order matches Backend/api/app/services/feature_vector.py.
-            # Heuristic focuses on "too fast / too empty" sessions.
-            try:
-                total_keystrokes = float(feature_vector[9])
-                click_count = float(feature_vector[16])
-                session_duration_ms = float(feature_vector[21])
-                time_to_first_action_ms = float(feature_vector[22])
-                paste_detected = float(feature_vector[15])
-            except Exception:
-                total_keystrokes, click_count, session_duration_ms, time_to_first_action_ms, paste_detected = 0, 0, 0, 0, 0
-
-            risk = 0.0
-            if session_duration_ms < 600:
-                risk += 0.5
-            if time_to_first_action_ms < 80:
-                risk += 0.25
-            if total_keystrokes == 0 and click_count == 0:
-                risk += 0.25
-            if paste_detected > 0:
-                risk += 0.25
-            risk = min(1.0, risk)
-            is_anomaly = risk >= 0.95
-            return {
-                "model_name": self.model_name,
-                "score": float(risk),
-                "threshold": 1.0,
-                "is_anomaly": bool(is_anomaly),
-            }
-
         # Scale features
-        scaled = self.scaler.transform([feature_vector])[0]
+        scaled = self.scaler.transform([feature_vector])
 
-        # Convert to tensor with batch dim
-        x = torch.tensor(scaled, dtype=torch.float32, device=self.device).unsqueeze(0)
+        # Convert list to Pytorch tensor
+        # Use standard dtype = float32 for neural networks
+        x = torch.tensor(feature_vector, dtype=torch.float32).to(self.device)
 
         # Disable gradient tracking during inference to save memory, speed up computation, and prevent accidental training
         with torch.no_grad():
             # Forward pass
             reconstruction = self.model(x)
-            error = self.criterion(reconstruction, x)
-        error_value = float(error.item())
 
-        threshold = float(self.threshold or 1.0)
-        is_anomaly = error_value > threshold
+            # Compute reconstruction error
+            error = self.criterion(reconstruction, x)
+        error_value = error.item()
+
+        # Compare error with threshold
+        is_anomaly = error_value > self.threshold
 
         return {
             "model_name": self.model_name,
             "score": error_value,
-            "threshold": float(threshold),
+            "threshold": float(self.threshold),
             "is_anomaly": bool(is_anomaly)
         }

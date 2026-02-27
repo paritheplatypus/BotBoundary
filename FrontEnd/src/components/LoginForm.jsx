@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { getBehaviorData } from "../behavior/behaviorTracker";
-import { apiFetch } from "../api/client";
 
 // ── Replace with your EC2 instance's public IP or domain ──────────────────
 const API_URL = "http://13.221.254.214:8000";
@@ -9,41 +8,14 @@ const API_URL = "http://13.221.254.214:8000";
 export default function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-<<<<<<< Updated upstream
-  const [status, setStatus] = useState(null);
-  const [error, setError] = useState(null);
-=======
   const [status, setStatus]     = useState(null);  // null | "loading" | "success" | "blocked"
   const [result, setResult]     = useState(null);
->>>>>>> Stashed changes
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("loading");
     setResult(null);
 
-<<<<<<< Updated upstream
-    setError(null);
-    setStatus("Submitting...");
-
-    const behavior = getBehaviorData();
-
-    try {
-      const result = await apiFetch("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ username, password, behavior }),
-      });
-
-      setStatus(
-        `Decision: ${result.decision} | Risk: ${result.risk_score.toFixed(2)} | Model: ${result.model_used}`
-      );
-
-      // TODO: route to dashboard / challenge page.
-      // For now, just show status.
-    } catch (err) {
-      setError(err.message || "Login failed");
-      setStatus(null);
-=======
     // Collect behavioral data at the moment of submit
     const behavior = getBehaviorData();
 
@@ -70,7 +42,6 @@ export default function LoginForm() {
     } catch (err) {
       console.error("Login request failed:", err);
       setStatus("error");
->>>>>>> Stashed changes
     }
   };
 
@@ -93,13 +64,6 @@ export default function LoginForm() {
           disabled={status === "loading"}
         />
 
-<<<<<<< Updated upstream
-      <button type="submit">Secure Login</button>
-
-      {status && <p className="login-status">{status}</p>}
-      {error && <p className="login-error">{error}</p>}
-    </form>
-=======
         <button type="submit" disabled={status === "loading"}>
           {status === "loading" ? "Analyzing..." : "Secure Login"}
         </button>
@@ -126,6 +90,5 @@ export default function LoginForm() {
         </p>
       )}
     </div>
->>>>>>> Stashed changes
   );
 }
