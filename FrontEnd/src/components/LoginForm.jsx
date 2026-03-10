@@ -23,10 +23,13 @@ export default function LoginForm() {
     };
 
     try {
-      const res = await fetch(`${API_URL}/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+	const res = await fetch(`${API_URL}/analyze`, {
+  	method: "POST",
+  	headers: { 
+    	"Content-Type": "application/json",
+    	"ngrok-skip-browser-warning": "true"
+  	},
+  	body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
