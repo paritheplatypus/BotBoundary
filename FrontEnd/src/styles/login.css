@@ -4,27 +4,33 @@
 }
 
 html, body, #root {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
 }
 
 /* Background */
+html {
+  background: radial-gradient(circle at top left, #1e293b, #0f172a 60%);
+}
+
 body {
   font-family: "Inter", sans-serif;
-  background: radial-gradient(circle at top left, #1e293b, #0f172a 60%);
+  color: white;
+
   display: flex;
   justify-content: center;
   align-items: center;
-  color: white;
+
+  padding-top: 80px; /* space for navbar */
 }
 
 /* Container */
 .login-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+   width: 100%; 
+   display: flex; 
+   justify-content: center; 
+   align-items: center; 
+   }
 
 /* Card */
 .login-card {
@@ -35,7 +41,7 @@ body {
   background: rgba(30, 41, 59, 0.75);
   backdrop-filter: blur(15px);
 
-  box-shadow: 
+  box-shadow:
     0 30px 80px rgba(0, 0, 0, 0.7),
     0 0 40px rgba(56, 189, 248, 0.3);
 
@@ -105,6 +111,18 @@ body {
   transform: translateY(-2px);
   box-shadow: 0 12px 30px rgba(14, 165, 233, 0.5);
 }
+
+/* Disabled state */
+.login-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-form input:disabled {
+  opacity: 0.5;
+}
+
 /* Auth result banners */
 .auth-result {
   margin-top: 18px;
@@ -141,13 +159,85 @@ body {
   color: #fde047;
 }
 
-/* Disabled state during analysis */
-.login-form button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+/* Behavioral Signals Panel */
+
+.behavior-panel {
+  margin-top: 25px;
+  padding: 18px 20px;
+  border-radius: 14px;
+
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.login-form input:disabled {
-  opacity: 0.5;
+/* Section label */
+
+.behavior-title {
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+/* Rows */
+
+.behavior-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.behavior-row span:first-child {
+  color: #94a3b8;
+}
+
+/* Colored values */
+
+.value {
+  font-weight: 500;
+}
+
+.value.green {
+  color: #22c55e;
+}
+
+.value.orange {
+  color: #f59e0b;
+}
+
+.value.blue {
+  color: #38bdf8;
+}
+
+/* Risk score */
+
+.risk-section {
+  margin-top: 12px;
+}
+
+.risk-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.risk-bar {
+  height: 8px;
+  border-radius: 5px;
+  background: rgba(51, 65, 85, 0.6);
+  overflow: hidden;
+}
+
+.risk-fill {
+  width: 20%;
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #38bdf8);
+  border-radius: 5px;
 }

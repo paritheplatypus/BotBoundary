@@ -40,3 +40,8 @@
 .read-the-docs {
   color: #888;
 }
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
