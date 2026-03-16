@@ -2,11 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-
-function About() {
-  return <div style={{ padding: 40 }}>About page placeholder</div>;
-}
-
+import About from "./pages/About";
 
 
 export default function App() {

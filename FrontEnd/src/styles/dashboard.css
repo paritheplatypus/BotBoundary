@@ -132,27 +132,34 @@
 
 .time {
   font-size: 12px;
+  margin-top: -50px;
   color: #8fa3bf;
 }
 
 /* Risk bar */
 
 .risk {
+  position: absolute;
+  left: 610px;     /* fixed horizontal position */
   display: flex;
   align-items: center;
-  gap: 10px;
 }
 
 .risk-bar {
-  width: 100px;
+  position: relative;
+  width: 120px;
   height: 5px;
   background: #334155;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .risk-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+
   height: 100%;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 .risk-fill.human { background: #22c55e; }

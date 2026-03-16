@@ -9,11 +9,11 @@ export default function Dashboard() {
   };
 
 const sessions = [
-  { user: "alice", initials: "AL", color: "blue", risk: 0.04, status: "human" },
-  { user: "unknown", initials: "??", color: "red", risk: 0.89, status: "bot" },
-  { user: "bob", initials: "BO", color: "blue", risk: 0.07, status: "human" },
-  { user: "unknown", initials: "??", color: "red", risk: 0.95, status: "bot" },
-  { user: "carol", initials: "CA", color: "yellow", risk: 0.31, status: "review" },
+  { user: "alice", initials: "AL", color: "blue", time: "2 minutes ago",risk: 0.04, status: "human" },
+  { user: "unknown", initials: "??", color: "red", time: "5 minutes ago",risk: 0.89, status: "bot" },
+  { user: "bob", initials: "BO", color: "blue", time: "12 minutes ago",risk: 0.07, status: "human" },
+  { user: "unknown", initials: "??", color: "red",time: "18 minutes ago", risk: 0.95, status: "bot" },
+  { user: "carol", initials: "CA", color: "yellow", time: "24 minutes ago",risk: 0.31, status: "review" },
 ];
 
   return (

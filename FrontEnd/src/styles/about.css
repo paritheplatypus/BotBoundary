@@ -1,0 +1,40 @@
+.about-container {
+  max-width: 1000px;
+padding: 0 20px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.about-card {
+  background: rgba(30,41,59,0.7);
+  border-radius: 18px;
+  padding: 30px;
+
+  border: 1px solid rgba(56,189,248,0.2);
+}
+
+.about-card h1 {
+  margin-bottom: 18px;
+}
+
+.about-card h2 {
+  margin-bottom: 12px;
+}
+
+.about-card p {
+  color: #9fb4d3;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.team-list {
+  list-style: none;
+  padding: 0;
+}
+
+.team-list li {
+  padding: 6px 0;
+  color: #cbd5f5;
+}
