@@ -18,11 +18,15 @@ export default function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
+        
         <h1 className="brand-title">CacheMeOutside</h1>
 
         <p className="subtitle">
           Intelligent Behavioral Authentication
         </p>
+        <p className="register">
+  Don't have an account? <a href="/register">Register</a>
+</p>
 
         <LoginForm onLogin={handleLogin} />
 

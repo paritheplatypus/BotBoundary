@@ -1,5 +1,6 @@
 import sys
 import os
+import hashlib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, HTTPException
@@ -9,11 +10,16 @@ from app.schemas import SessionRequest, RiskResponse
 from app.services.score_service import ScoreService
 from app.services.feature_extractor import flatten_behavior
 from app.models.autoencoder import AutoencoderModel
+from pydantic import BaseModel
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
 
 MOCK_MODE = True
 
 try:
-    from Data.database import get_user_by_username, create_session, update_session_result
+    from Data.database import get_user_by_username, create_user, create_session, update_session_result
     DB_AVAILABLE = True
 except Exception as e:
     print(f"[WARN] Database unavailable ({e}). Running without persistence.")
@@ -36,6 +42,29 @@ score_svc = ScoreService()
 @app.get("/health")
 def health():
     return {"status": "ok", "mock_mode": MOCK_MODE}
+
+@app.post("/register")
+def register_user(req: RegisterRequest):
+
+    if not DB_AVAILABLE:
+        raise HTTPException(status_code=500, detail="Database unavailable")
+
+    # check if user already exists
+    existing = get_user_by_username(req.username)
+    if existing:
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    password_hash = hashlib.sha256(req.password.encode()).hexdigest()
+
+    user = create_user(req.username, password_hash)
+
+    if not user:
+        raise HTTPException(status_code=500, detail="Failed to create user")
+
+    return {
+        "message": "User created successfully",
+        "userId": user["userId"]
+    }
 
 @app.post("/analyze", response_model=RiskResponse)
 def analyze_session(request: SessionRequest):
