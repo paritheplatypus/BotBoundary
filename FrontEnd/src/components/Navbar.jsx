@@ -11,6 +11,7 @@ export default function Navbar() {
     <NavLink to="/">Login</NavLink>
     <NavLink to="/about">About</NavLink>
     <NavLink to="/dashboard">Dashboard</NavLink>
+    <NavLink to="/session">Session detail</NavLink>
     </div>
 
     <div className="status">● System active</div>
