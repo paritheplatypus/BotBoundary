@@ -7,18 +7,19 @@ sys.path.insert(0, "/home/ubuntu/BotBoundary")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.schemas import SessionRequest, RiskResponse
-from app.services.score_service import ScoreService
-from app.services.feature_extractor import flatten_behavior
+from Model.login_auth.app.schemas import SessionRequest, RiskResponse
+from Model.login_auth.app.services.score_service import ScoreService
+from Model.login_auth.app.services.feature_extractor import flatten_behavior
 from pydantic import BaseModel
-
+from Model.login_auth.training.preprocess_data import parse_dynamodb_json
+from Model.login_auth.app.models.autoencoder import AutoencoderModel
 
 class RegisterRequest(BaseModel):
     username: str
     password: str
 
 
-MOCK_MODE = True
+MOCK_MODE = False
 
 try:
     from Data.database import (
@@ -102,11 +103,16 @@ def analyze_session(request: SessionRequest):
         }
     else:
         try:
-            feature_vector = flatten_behavior(behavior_dict)
-            from app.models.autoencoder import AutoencoderModel
             autoencoder = AutoencoderModel()
             autoencoder.load()
-            model_output = autoencoder.predict(feature_vector)
+            parsed = {}
+
+            parsed.update(parse_dynamodb_json(behavior_dict.get("interaction")))
+            parsed.update(parse_dynamodb_json(behavior_dict.get("keyboard")))
+            parsed.update(parse_dynamodb_json(behavior_dict.get("mouse")))
+            parsed.update(parse_dynamodb_json(behavior_dict.get("timing")))
+
+            model_output = autoencoder.predict(parsed)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Model inference failed: {e}")
 

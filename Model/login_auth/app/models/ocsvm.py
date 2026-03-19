@@ -1,7 +1,7 @@
-from app.models.base_model import Basemodel
+from Model.login_auth.app.models.base_model import Basemodel
 import os
 import joblib
-from app.core.config import USERS_MODEL_DIR
+from Model.login_auth.app.core.config import USERS_MODEL_DIR
 
 class OneClassSVMModel(Basemodel):
 

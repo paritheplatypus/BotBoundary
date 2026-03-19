@@ -11,7 +11,7 @@ sys.path.append(
         os.path.dirname(os.path.abspath(__file__))
     )
 )
-from app.core.config import USERS_MODEL_DIR
+from Model.login_auth.app.core.config import USERS_MODEL_DIR
 
 def train(X_train: np.ndarray, user_id: str, nu: float = 0.05, kernerl: str = "rbf", gamma: str = "scale"):
     """

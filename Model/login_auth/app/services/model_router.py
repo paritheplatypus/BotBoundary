@@ -1,6 +1,6 @@
-from app.models.autoencoder import AutoencoderModel
-from app.models.ocsvm import OneClassSVMModel
-from app.services.feature_extractor import FEATURE_DIM
+from Model.login_auth.app.models.autoencoder import AutoencoderModel
+from Model.login_auth.app.models.ocsvm import OneClassSVMModel
+from Model.login_auth.app.services.feature_extractor import FEATURE_DIM
 
 
 class ModelRouter:

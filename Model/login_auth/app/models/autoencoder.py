@@ -1,9 +1,9 @@
-from app.models.base_model import Basemodel
+from Model.login_auth.app.models.base_model import Basemodel
 import torch
 import torch.nn as nn
 import numpy as np
-from app.core.config import AUTOENCODER_DIR
-from app.services.feature_extractor import FEATURE_DIM
+from Model.login_auth.app.core.config import AUTOENCODER_DIR
+from Model.login_auth.app.services.feature_extractor import FEATURE_DIM
 
 import joblib
 import os
@@ -55,10 +55,11 @@ class AutoencoderModel(Basemodel):
 
         self.scaler = joblib.load(os.path.join(self.model_path, "scaler.pkl"))
         self.threshold = np.load(os.path.join(self.model_path, "threshold.npy"))
+        self.feature_columns = joblib.load(os.path.join(self.model_path, "feature_columns.pkl"))
         self.model.eval()
 
 
-    def predict(self, feature_vector):
+    def predict(self, parsed_features: dict):
 
         """
         Runs a forward pass and computes reconstruction error
@@ -70,12 +71,18 @@ class AutoencoderModel(Basemodel):
         }
         """
 
+        # Align prediction feature order with training order
+        feature_vector = [
+            float(parsed_features.get(col, 0.0))
+            for col in self.feature_columns
+        ]
+
         # Scale features
         scaled = self.scaler.transform([feature_vector])
 
         # Convert list to Pytorch tensor
         # Use standard dtype = float32 for neural networks
-        x = torch.tensor(feature_vector, dtype=torch.float32).to(self.device)
+        x = torch.tensor(scaled, dtype=torch.float32).to(self.device)
 
         # Disable gradient tracking during inference to save memory, speed up computation, and prevent accidental training
         with torch.no_grad():
