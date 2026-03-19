@@ -1,0 +1,249 @@
+/* Reset */
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  min-height: 100%;
+  margin: 0;
+}
+
+/* Background */
+html {
+  background: radial-gradient(circle at top left, #1e293b, #0f172a 60%);
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  color: white;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding-top: 80px; /* space for navbar */
+}
+
+/* Container */
+.login-container {
+   width: 100%; 
+   display: flex; 
+   justify-content: center; 
+   align-items: center; 
+   }
+
+/* Card */
+.login-card {
+  width: 420px;
+  padding: 50px 45px;
+  border-radius: 20px;
+
+  background: rgba(30, 41, 59, 0.75);
+  backdrop-filter: blur(15px);
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(56, 189, 248, 0.3);
+
+  border: 1px solid rgba(56, 189, 248, 0.3);
+
+  transition: 0.3s ease;
+}
+
+/* Title */
+.brand-title {
+  text-align: center;
+  font-size: 30px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  text-align: center;
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+.register {
+  text-align: center;
+  font-size: 14px;
+  color: #94a3b8;
+ 
+}
+
+/* Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Inputs */
+.login-form input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(51, 65, 85, 0.6);
+  color: white;
+  font-size: 14px;
+  transition: 0.25s ease;
+}
+
+.login-form input::placeholder {
+  color: #94a3b8;
+}
+
+.login-form input:focus {
+  outline: none;
+  border: 1px solid #38bdf8;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+/* Button */
+.login-form button {
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.login-form button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(14, 165, 233, 0.5);
+}
+
+/* Disabled state */
+.login-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.login-form input:disabled {
+  opacity: 0.5;
+}
+
+/* Auth result banners */
+.auth-result {
+  margin-top: 18px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.auth-result small {
+  font-size: 11px;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.auth-result--pass {
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #86efac;
+}
+
+.auth-result--fail {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.auth-result--error {
+  background: rgba(234, 179, 8, 0.15);
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  color: #fde047;
+}
+
+/* Behavioral Signals Panel */
+
+.behavior-panel {
+  margin-top: 25px;
+  padding: 18px 20px;
+  border-radius: 14px;
+
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Section label */
+
+.behavior-title {
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+/* Rows */
+
+.behavior-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.behavior-row span:first-child {
+  color: #94a3b8;
+}
+
+/* Colored values */
+
+.value {
+  font-weight: 500;
+}
+
+.value.green {
+  color: #22c55e;
+}
+
+.value.orange {
+  color: #f59e0b;
+}
+
+.value.blue {
+  color: #38bdf8;
+}
+
+/* Risk score */
+
+.risk-section {
+  margin-top: 12px;
+}
+
+.risk-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.risk-bar {
+  height: 8px;
+  border-radius: 5px;
+  background: rgba(51, 65, 85, 0.6);
+  overflow: hidden;
+}
+
+.risk-fill {
+  width: 20%;
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #38bdf8);
+  border-radius: 5px;
+}
