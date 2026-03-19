@@ -14,7 +14,6 @@ Required GSI:
 import boto3
 import uuid
 import time
-import json
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 from decimal import Decimal
@@ -36,6 +35,17 @@ def _clean(obj):
         return {k: _clean(v) for k, v in obj.items()}
     elif isinstance(obj, Decimal):
         return float(obj)
+    return obj
+
+
+def _to_dynamo(obj):
+    """Recursively convert Python floats into DynamoDB-safe Decimals."""
+    if isinstance(obj, list):
+        return [_to_dynamo(i) for i in obj]
+    elif isinstance(obj, dict):
+        return {k: _to_dynamo(v) for k, v in obj.items()}
+    elif isinstance(obj, float):
+        return Decimal(str(obj))
     return obj
 
 
@@ -89,7 +99,7 @@ def update_behavior_profile(user_id: str, profile_data: dict) -> bool:
             Key={'userId': user_id},
             UpdateExpression="SET behaviorProfile = :profile, updatedAt = :ts",
             ExpressionAttributeValues={
-                ':profile': profile_data,
+                ':profile': _to_dynamo(profile_data),
                 ':ts':      int(time.time() * 1000),
             }
         )
@@ -215,19 +225,16 @@ def get_user_sessions(user_id: str) -> list:
         return []
 
 
-def save_behavior_payload(session_id: str, behavior: dict) -> bool:
+def save_behavior_payload(session_id: str, user_id: str, behavior: dict) -> bool:
     """
     Save the full behavior payload to the session record so the
     session detail page can display real behavioral data.
     """
     try:
-        # Convert floats to Decimal for DynamoDB
-        behavior_str = json.dumps(behavior)
-
         sessions_table.update_item(
-            Key={'sessionId': session_id},
+            Key={'sessionId': session_id, 'userId': user_id},
             UpdateExpression="SET behaviorPayload = :b",
-            ExpressionAttributeValues={':b': behavior_str},
+            ExpressionAttributeValues={':b': _to_dynamo(behavior)},
         )
         return True
     except ClientError as e:
@@ -243,7 +250,7 @@ def log_behavioral_event(session_id: str, event_type: str, event_data: dict) -> 
         'sessionId': session_id,
         'timestamp': timestamp,
         'eventType': event_type,
-        **event_data,
+        **_to_dynamo(event_data),
     }
     try:
         behavioral_events_table.put_item(Item=item)
