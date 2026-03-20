@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 from torch.utils.data import DataLoader, TensorDataset
-from Model.login_auth.app.models.autoencoder import AutoencoderModel
+from app.models.autoencoder import AutoencoderModel
 import os
 from preprocess_data import preprocess_csv
 
@@ -27,6 +27,7 @@ def train(epochs: int = 40, batch_size: int = 8, learning_rate: float = 0.001):
     """
     feature_df = preprocess_csv("behavioral_events.csv")
     X_train = feature_df.values
+    input_dim = X_train.shape[1]
 
     # Confirm save directory
     os.makedirs(AUTOENCODER_DIR, exist_ok=True)
@@ -35,7 +36,6 @@ def train(epochs: int = 40, batch_size: int = 8, learning_rate: float = 0.001):
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_train)
     joblib.dump(scaler, os.path.join(AUTOENCODER_DIR, "scaler.pkl"))
-    joblib.dump(feature_df.columns.tolist(), os.path.join(AUTOENCODER_DIR, "feature_columns.pkl"))
 
     # Initialize model
     input_dim = X_train.shape[1]

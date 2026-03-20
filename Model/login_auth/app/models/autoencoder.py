@@ -1,9 +1,9 @@
-from Model.login_auth.app.models.base_model import Basemodel
+from app.models.base_model import Basemodel
 import torch
 import torch.nn as nn
 import numpy as np
-from Model.login_auth.app.core.config import AUTOENCODER_DIR
-from Model.login_auth.app.services.feature_extractor import FEATURE_DIM
+from core.config import AUTOENCODER_DIR
+from services.feature_extractor import FEATURE_DIM
 
 import joblib
 import os
@@ -55,27 +55,20 @@ class AutoencoderModel(Basemodel):
 
         self.scaler = joblib.load(os.path.join(self.model_path, "scaler.pkl"))
         self.threshold = np.load(os.path.join(self.model_path, "threshold.npy"))
-        self.feature_columns = joblib.load(os.path.join(self.model_path, "feature_columns.pkl"))
         self.model.eval()
 
 
-    def predict(self, parsed_features: dict):
+    def predict(self, feature_vector):
 
         """
         Runs a forward pass and computes reconstruction error
-        feature_vector: list of floats
+        feature_vector: List[float] (length = FEATURE_DIM)
         Returns:
         {
             "model_name": str,
             "score": float (reconstruction error)
         }
         """
-
-        # Align prediction feature order with training order
-        feature_vector = [
-            float(parsed_features.get(col, 0.0))
-            for col in self.feature_columns
-        ]
 
         # Scale features
         scaled = self.scaler.transform([feature_vector])

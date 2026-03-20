@@ -1,6 +1,7 @@
 import pandas as pd
 import json
 import numpy as np
+from app.services.feature_extractor import FEATURE_ORDER
 
 
 def parse_dynamodb_json(blob):
@@ -32,25 +33,40 @@ def parse_dynamodb_json(blob):
 
     return parsed
 
-
 def build_feature_dataframe(df):
-    """
-    Extracts and flattens only the columns you decided to keep.
-    """
     rows = []
 
     for _, row in df.iterrows():
-        features = {}
+        # Parse DynamoDB-style JSON (training only)
+        interaction = parse_dynamodb_json(row.get("interaction"))
+        keyboard = parse_dynamodb_json(row.get("keyboard"))
+        mouse = parse_dynamodb_json(row.get("mouse"))
+        timing = parse_dynamodb_json(row.get("timing"))
 
-        # Parse selected columns
-        features.update(parse_dynamodb_json(row.get("interaction")))
-        features.update(parse_dynamodb_json(row.get("keyboard")))
-        features.update(parse_dynamodb_json(row.get("mouse")))
-        features.update(parse_dynamodb_json(row.get("timing")))
+        behavior = {
+            "interaction": interaction,
+            "keyboard": keyboard,
+            "mouse": mouse,
+            "timing": timing,
+        }
 
-        rows.append(features)
+        vector = []
 
-    feature_df = pd.DataFrame(rows)
+        # Enforce exact same order as inference
+        for key in FEATURE_ORDER:
+            group, field = key.split(".", 1)
+
+            value = behavior.get(group, {}).get(field, 0.0)
+
+            if isinstance(value, bool):
+                value = 1.0 if value else 0.0
+
+            vector.append(float(value))
+
+        rows.append(vector)
+
+    # IMPORTANT: enforce column order explicitly
+    feature_df = pd.DataFrame(rows, columns=FEATURE_ORDER)
 
     return feature_df
 

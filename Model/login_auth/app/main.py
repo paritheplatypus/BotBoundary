@@ -7,12 +7,11 @@ sys.path.insert(0, "/home/ubuntu/BotBoundary")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from Model.login_auth.app.schemas import SessionRequest, RiskResponse
-from Model.login_auth.app.services.score_service import ScoreService
-from Model.login_auth.app.services.feature_extractor import flatten_behavior
+from app.schemas import SessionRequest, RiskResponse
+from app.services.score_service import ScoreService
+from app.services.feature_extractor import flatten_behavior
 from pydantic import BaseModel
-from Model.login_auth.training.preprocess_data import parse_dynamodb_json
-from Model.login_auth.app.models.autoencoder import AutoencoderModel
+from app.models.autoencoder import AutoencoderModel
 
 class RegisterRequest(BaseModel):
     username: str
@@ -20,6 +19,12 @@ class RegisterRequest(BaseModel):
 
 
 MOCK_MODE = False
+
+try:
+    autoencoder = AutoencoderModel()
+    autoencoder.load()
+except Exception as e:
+    raise HTTPException(status_code=500, detail=f"Model loading failed: {e}")
 
 try:
     from Data.database import (
@@ -103,16 +108,9 @@ def analyze_session(request: SessionRequest):
         }
     else:
         try:
-            autoencoder = AutoencoderModel()
-            autoencoder.load()
-            parsed = {}
+            feature_vector = flatten_behavior(behavior_dict)
 
-            parsed.update(parse_dynamodb_json(behavior_dict.get("interaction")))
-            parsed.update(parse_dynamodb_json(behavior_dict.get("keyboard")))
-            parsed.update(parse_dynamodb_json(behavior_dict.get("mouse")))
-            parsed.update(parse_dynamodb_json(behavior_dict.get("timing")))
-
-            model_output = autoencoder.predict(parsed)
+            model_output = autoencoder.predict(feature_vector)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Model inference failed: {e}")
 
