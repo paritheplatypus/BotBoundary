@@ -240,10 +240,11 @@
 }
 
 .gauge-center {
-  
-  bottom: -10px;   
+  position: absolute;
+  bottom: -10px;
   width: 100%;
   text-align: center;
+  z-index: 1;
 }
 
 .gauge-number {
