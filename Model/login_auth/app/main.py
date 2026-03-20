@@ -7,17 +7,15 @@ sys.path.insert(0, "/home/ubuntu/BotBoundary")
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from Model.login_auth.app.schemas import SessionRequest, RiskResponse
-from Model.login_auth.app.services.score_service import ScoreService
-from Model.login_auth.app.services.feature_extractor import flatten_behavior
+from app.schemas import SessionRequest, RiskResponse
+from app.services.score_service import ScoreService
+from app.services.feature_extractor import flatten_behavior
+from app.models.autoencoder import AutoencoderModel
 from pydantic import BaseModel
-from Model.login_auth.training.preprocess_data import parse_dynamodb_json
-from Model.login_auth.app.models.autoencoder import AutoencoderModel
 
 class RegisterRequest(BaseModel):
     username: str
     password: str
-
 
 MOCK_MODE = False
 
@@ -30,13 +28,21 @@ try:
         get_recent_sessions,
         get_session,
         save_behavior_payload,
-        log_behavioral_event,
     )
     DB_AVAILABLE = True
     print("[STARTUP] Database connected successfully.")
 except Exception as e:
     print(f"[WARN] Database unavailable ({e}). Running without persistence.")
     DB_AVAILABLE = False
+
+# Load autoencoder once at startup
+try:
+    autoencoder = AutoencoderModel()
+    autoencoder.load()
+    print("[STARTUP] Autoencoder loaded successfully.")
+except Exception as e:
+    print(f"[WARN] Could not load autoencoder: {e}. Falling back to mock mode.")
+    autoencoder = None
 
 app = FastAPI(title="CacheMeOutside - Behavioral Auth API")
 
@@ -48,31 +54,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-if MOCK_MODE:
-    print("[STARTUP] Running in MOCK MODE - all logins will pass.")
-
 score_svc = ScoreService()
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "mock_mode": MOCK_MODE, "db": DB_AVAILABLE}
+    return {"status": "ok", "mock_mode": MOCK_MODE, "db": DB_AVAILABLE, "model": autoencoder is not None}
 
 
 @app.post("/register")
 def register_user(req: RegisterRequest):
     if not DB_AVAILABLE:
         raise HTTPException(status_code=500, detail="Database unavailable")
-
     existing = get_user_by_username(req.username)
     if existing:
         raise HTTPException(status_code=400, detail="Username already taken")
     password_hash = hashlib.sha256(req.password.encode()).hexdigest()
-
     user = create_user(req.username, password_hash)
     if not user:
         raise HTTPException(status_code=500, detail="Failed to create user")
-
     return {"message": "Account created successfully", "userId": user["userId"]}
 
 
@@ -87,14 +87,14 @@ def analyze_session(request: SessionRequest):
             user = create_user(request.username, "placeholder")
         if user:
             user_id = user["userId"]
-            if user_id:
-                db_session = create_session(user_id)
-                if db_session:
-                    session_id = db_session["sessionId"]
+        if user_id:
+            db_session = create_session(user_id)
+            if db_session:
+                session_id = db_session["sessionId"]
 
     behavior_dict = request.behavior.model_dump()
 
-    if MOCK_MODE:
+    if MOCK_MODE or autoencoder is None:
         model_output = {
             "model_name": "mock",
             "score": 0.01,
@@ -103,14 +103,13 @@ def analyze_session(request: SessionRequest):
         }
     else:
         try:
-            autoencoder = AutoencoderModel()
-            autoencoder.load()
+            # Flatten behavior dict into feature dict for the model
+            # behavior_dict is already a plain Python dict — no DynamoDB parsing needed
             parsed = {}
-
-            parsed.update(parse_dynamodb_json(behavior_dict.get("interaction")))
-            parsed.update(parse_dynamodb_json(behavior_dict.get("keyboard")))
-            parsed.update(parse_dynamodb_json(behavior_dict.get("mouse")))
-            parsed.update(parse_dynamodb_json(behavior_dict.get("timing")))
+            for group in ["interaction", "keyboard", "mouse", "timing"]:
+                group_data = behavior_dict.get(group, {})
+                if isinstance(group_data, dict):
+                    parsed.update(group_data)
 
             model_output = autoencoder.predict(parsed)
         except Exception as e:
@@ -126,8 +125,7 @@ def analyze_session(request: SessionRequest):
             ml_score=result["risk_score"],
             is_bot=result["is_bot"],
         )
-        save_behavior_payload(session_id, user_id, behavior_dict)
-        log_behavioral_event(session_id, "behavior_payload", behavior_dict)
+        save_behavior_payload(session_id, behavior_dict)
 
     return result
 
@@ -136,7 +134,6 @@ def analyze_session(request: SessionRequest):
 def get_sessions(limit: int = 20):
     if not DB_AVAILABLE:
         raise HTTPException(status_code=500, detail="Database unavailable")
-
     sessions = get_recent_sessions(limit=limit)
     return {"sessions": sessions}
 
@@ -145,9 +142,7 @@ def get_sessions(limit: int = 20):
 def get_session_detail(session_id: str):
     if not DB_AVAILABLE:
         raise HTTPException(status_code=500, detail="Database unavailable")
-
     session = get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-
     return session
