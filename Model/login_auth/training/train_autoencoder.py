@@ -25,7 +25,7 @@ def train(epochs: int = 40, batch_size: int = 8, learning_rate: float = 0.001):
     Trains autoencoder model on normal data (human)
     X_train: data preprocessed by preprocess_data.py
     """
-    feature_df = preprocess_csv("behavioral_events.csv")
+    feature_df = preprocess_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "behavioral_events.csv"))
     X_train = feature_df.values
 
     # Confirm save directory
