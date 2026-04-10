@@ -21,10 +21,16 @@ from decimal import Decimal
 
 import boto3
 from boto3.dynamodb.conditions import Attr, Key
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 
 
-dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
+class DatabaseUnavailableError(RuntimeError):
+    """Raised when DynamoDB cannot be reached or authenticated."""
+
+
+REGION = "us-east-1"
+
+dynamodb = boto3.resource("dynamodb", region_name=REGION)
 users_table = dynamodb.Table("Users")
 sessions_table = dynamodb.Table("Sessions")
 behavioral_events_table = dynamodb.Table("BehavioralEvents")
@@ -54,6 +60,26 @@ def _to_dynamo(obj):
     return obj
 
 
+def _raise_db_unavailable(action: str, exc: Exception):
+    print(f"[DB UNAVAILABLE] {action}: {exc}")
+    raise DatabaseUnavailableError(f"Database unavailable during {action}") from exc
+
+
+def ping_database() -> bool:
+    """
+    Best-effort connectivity check for the tables needed by login/analyze.
+
+    BehavioralEvents is intentionally not required for the auth path.
+    """
+    try:
+        users_table.load()
+        sessions_table.load()
+        return True
+    except (ClientError, BotoCoreError) as exc:
+        print(f"[DB UNAVAILABLE] ping_database: {exc}")
+        return False
+
+
 # ── Users ─────────────────────────────────────────────────────────────────────
 def create_user(username: str, password_hash: str) -> dict | None:
     user_id = str(uuid.uuid4())
@@ -69,18 +95,16 @@ def create_user(username: str, password_hash: str) -> dict | None:
         users_table.put_item(Item=item)
         print(f"[DB] User created: {user_id}")
         return item
-    except ClientError as exc:
-        print(f"[DB ERROR] create_user: {exc.response['Error']['Message']}")
-        return None
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("create_user", exc)
 
 
 def get_user(user_id: str) -> dict | None:
     try:
         response = users_table.get_item(Key={"userId": user_id})
         return _clean(response.get("Item"))
-    except ClientError as exc:
-        print(f"[DB ERROR] get_user: {exc.response['Error']['Message']}")
-        return None
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("get_user", exc)
 
 
 def get_user_by_username(username: str) -> dict | None:
@@ -97,7 +121,9 @@ def get_user_by_username(username: str) -> dict | None:
     except ClientError as exc:
         error_code = exc.response["Error"].get("Code")
         if error_code != "ValidationException":
-            print(f"[DB ERROR] get_user_by_username(query): {exc.response['Error']['Message']}")
+            _raise_db_unavailable("get_user_by_username(query)", exc)
+    except BotoCoreError as exc:
+        _raise_db_unavailable("get_user_by_username(query)", exc)
 
     # Fallback for environments where the GSI has not been created yet.
     try:
@@ -107,9 +133,8 @@ def get_user_by_username(username: str) -> dict | None:
         )
         items = response.get("Items", [])
         return _clean(items[0]) if items else None
-    except ClientError as exc:
-        print(f"[DB ERROR] get_user_by_username(scan): {exc.response['Error']['Message']}")
-        return None
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("get_user_by_username(scan)", exc)
 
 
 def update_user_password_hash(user_id: str, password_hash: str) -> bool:
@@ -123,9 +148,8 @@ def update_user_password_hash(user_id: str, password_hash: str) -> bool:
             },
         )
         return True
-    except ClientError as exc:
-        print(f"[DB ERROR] update_user_password_hash: {exc.response['Error']['Message']}")
-        return False
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("update_user_password_hash", exc)
 
 
 def update_behavior_profile(user_id: str, profile_data: dict) -> bool:
@@ -139,9 +163,8 @@ def update_behavior_profile(user_id: str, profile_data: dict) -> bool:
             },
         )
         return True
-    except ClientError as exc:
-        print(f"[DB ERROR] update_behavior_profile: {exc.response['Error']['Message']}")
-        return False
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("update_behavior_profile", exc)
 
 
 # ── Sessions ──────────────────────────────────────────────────────────────────
@@ -158,9 +181,8 @@ def create_session(user_id: str) -> dict | None:
         sessions_table.put_item(Item=item)
         print(f"[DB] Session created: {session_id}")
         return item
-    except ClientError as exc:
-        print(f"[DB ERROR] create_session: {exc.response['Error']['Message']}")
-        return None
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("create_session", exc)
 
 
 def get_session(session_id: str, user_id: str | None = None) -> dict | None:
@@ -176,14 +198,11 @@ def get_session(session_id: str, user_id: str | None = None) -> dict | None:
             )
             return _clean(response.get("Item"))
 
-        response = sessions_table.scan(
-            FilterExpression=Attr("sessionId").eq(session_id)
-        )
+        response = sessions_table.scan(FilterExpression=Attr("sessionId").eq(session_id))
         items = response.get("Items", [])
         return _clean(items[0]) if items else None
-    except ClientError as exc:
-        print(f"[DB ERROR] get_session: {exc.response['Error']['Message']}")
-        return None
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("get_session", exc)
 
 
 def update_session_result(
@@ -212,9 +231,8 @@ def update_session_result(
             ExpressionAttributeValues=expr_values,
         )
         return True
-    except ClientError as exc:
-        print(f"[DB ERROR] update_session_result: {exc.response['Error']['Message']}")
-        return False
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("update_session_result", exc)
 
 
 def get_recent_sessions(limit: int = 20) -> list:
@@ -231,15 +249,19 @@ def get_recent_sessions(limit: int = 20) -> list:
         )
         return _clean(response.get("Items", []))
     except ClientError as exc:
-        print(f"[DB ERROR] get_recent_sessions: {exc.response['Error']['Message']}")
+        error_code = exc.response["Error"].get("Code")
+        if error_code != "ValidationException":
+            _raise_db_unavailable("get_recent_sessions(query)", exc)
+    except BotoCoreError as exc:
+        _raise_db_unavailable("get_recent_sessions(query)", exc)
 
     try:
         response = sessions_table.scan()
         items = response.get("Items", [])
         items.sort(key=lambda item: item.get("createdAt", 0), reverse=True)
         return _clean(items[:limit])
-    except Exception:
-        return []
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("get_recent_sessions(scan)", exc)
 
 
 def get_user_sessions(user_id: str) -> list:
@@ -250,8 +272,16 @@ def get_user_sessions(user_id: str) -> list:
         )
         return _clean(response.get("Items", []))
     except ClientError as exc:
-        print(f"[DB ERROR] get_user_sessions: {exc.response['Error']['Message']}")
-        return []
+        error_code = exc.response["Error"].get("Code")
+        if error_code == "ValidationException":
+            try:
+                response = sessions_table.scan(FilterExpression=Attr("userId").eq(user_id))
+                return _clean(response.get("Items", []))
+            except (ClientError, BotoCoreError) as scan_exc:
+                _raise_db_unavailable("get_user_sessions(scan)", scan_exc)
+        _raise_db_unavailable("get_user_sessions(query)", exc)
+    except BotoCoreError as exc:
+        _raise_db_unavailable("get_user_sessions(query)", exc)
 
 
 def save_behavior_payload(session_id: str, user_id: str, behavior: dict) -> bool:
@@ -266,9 +296,8 @@ def save_behavior_payload(session_id: str, user_id: str, behavior: dict) -> bool
             ExpressionAttributeValues={":behavior": _to_dynamo(behavior)},
         )
         return True
-    except ClientError as exc:
-        print(f"[DB ERROR] save_behavior_payload: {exc.response['Error']['Message']}")
-        return False
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("save_behavior_payload", exc)
 
 
 # ── Behavioral Events ─────────────────────────────────────────────────────────
@@ -283,9 +312,8 @@ def log_behavioral_event(session_id: str, event_type: str, event_data: dict) -> 
     try:
         behavioral_events_table.put_item(Item=item)
         return True
-    except ClientError as exc:
-        print(f"[DB ERROR] log_behavioral_event: {exc.response['Error']['Message']}")
-        return False
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("log_behavioral_event", exc)
 
 
 def get_session_events(session_id: str) -> list:
@@ -294,9 +322,8 @@ def get_session_events(session_id: str) -> list:
             KeyConditionExpression=Key("sessionId").eq(session_id)
         )
         return _clean(response.get("Items", []))
-    except ClientError as exc:
-        print(f"[DB ERROR] get_session_events: {exc.response['Error']['Message']}")
-        return []
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("get_session_events", exc)
 
 
 def delete_session_events(session_id: str) -> bool:
@@ -311,6 +338,5 @@ def delete_session_events(session_id: str) -> bool:
                     }
                 )
         return True
-    except ClientError as exc:
-        print(f"[DB ERROR] delete_session_events: {exc.response['Error']['Message']}")
-        return False
+    except (ClientError, BotoCoreError) as exc:
+        _raise_db_unavailable("delete_session_events", exc)
