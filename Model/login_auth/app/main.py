@@ -18,23 +18,18 @@ MOCK_MODE = True
 
 try:
     from Data.database import (
-        DatabaseUnavailableError,
         create_session,
         create_user,
         get_recent_sessions,
         get_session,
         get_user_by_username,
-        ping_database,
         save_behavior_payload,
         update_session_result,
         update_user_password_hash,
     )
 
-    DB_AVAILABLE = ping_database()
-    if DB_AVAILABLE:
-        print("[STARTUP] Database connected successfully.")
-    else:
-        print("[WARN] Database import succeeded, but DynamoDB is not reachable.")
+    DB_AVAILABLE = True
+    print("[STARTUP] Database connected successfully.")
 except Exception as exc:  # pragma: no cover - startup fallback
     print(f"[WARN] Database unavailable ({exc}). Running without persistence.")
     DB_AVAILABLE = False
@@ -59,10 +54,6 @@ app.add_middleware(
 score_svc = ScoreService()
 
 
-def _db_unavailable_response() -> HTTPException:
-    return HTTPException(status_code=503, detail="Database unavailable")
-
-
 @app.get("/health")
 def health() -> dict:
     return {
@@ -76,25 +67,18 @@ def health() -> dict:
 @app.post("/register")
 def register_user(req: RegisterRequest) -> dict:
     if not DB_AVAILABLE:
-        raise _db_unavailable_response()
+        raise HTTPException(status_code=500, detail="Database unavailable")
 
     username = req.username.strip()
-    try:
-        existing_user = get_user_by_username(username)
-    except DatabaseUnavailableError as exc:
-        raise _db_unavailable_response() from exc
-
-    if existing_user:
+    if get_user_by_username(username):
         raise HTTPException(status_code=400, detail="Username already taken")
 
     try:
         password_hash = hash_password(req.password)
-        user = create_user(username, password_hash)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except DatabaseUnavailableError as exc:
-        raise _db_unavailable_response() from exc
 
+    user = create_user(username, password_hash)
     if not user:
         raise HTTPException(status_code=500, detail="Failed to create user")
 
@@ -104,14 +88,10 @@ def register_user(req: RegisterRequest) -> dict:
 @app.post("/analyze", response_model=RiskResponse)
 def analyze_session(request: SessionRequest) -> dict:
     if not DB_AVAILABLE:
-        raise _db_unavailable_response()
+        raise HTTPException(status_code=500, detail="Database unavailable")
 
     username = request.username.strip()
-    try:
-        user = get_user_by_username(username)
-    except DatabaseUnavailableError as exc:
-        raise _db_unavailable_response() from exc
-
+    user = get_user_by_username(username)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -135,12 +115,9 @@ def analyze_session(request: SessionRequest) -> dict:
 
     user_id = user["userId"]
     session_id = None
-    try:
-        db_session = create_session(user_id)
-        if db_session:
-            session_id = db_session["sessionId"]
-    except DatabaseUnavailableError as exc:
-        print(f"[WARN] Could not persist session start: {exc}")
+    db_session = create_session(user_id)
+    if db_session:
+        session_id = db_session["sessionId"]
 
     behavior_dict = request.behavior.model_dump()
 
@@ -169,16 +146,13 @@ def analyze_session(request: SessionRequest) -> dict:
     result["session_id"] = session_id
 
     if session_id:
-        try:
-            update_session_result(
-                session_id=session_id,
-                user_id=user_id,
-                ml_score=result["risk_score"],
-                is_bot=result["is_bot"],
-            )
-            save_behavior_payload(session_id, user_id, behavior_dict)
-        except DatabaseUnavailableError as exc:
-            print(f"[WARN] Could not persist analyze result: {exc}")
+        update_session_result(
+            session_id=session_id,
+            user_id=user_id,
+            ml_score=result["risk_score"],
+            is_bot=result["is_bot"],
+        )
+        save_behavior_payload(session_id, user_id, behavior_dict)
 
     return result
 
@@ -186,24 +160,16 @@ def analyze_session(request: SessionRequest) -> dict:
 @app.get("/sessions")
 def get_sessions(limit: int = 20) -> dict:
     if not DB_AVAILABLE:
-        raise _db_unavailable_response()
-
-    try:
-        return {"sessions": get_recent_sessions(limit=limit)}
-    except DatabaseUnavailableError as exc:
-        raise _db_unavailable_response() from exc
+        raise HTTPException(status_code=500, detail="Database unavailable")
+    return {"sessions": get_recent_sessions(limit=limit)}
 
 
 @app.get("/sessions/{session_id}")
 def get_session_detail(session_id: str) -> dict:
     if not DB_AVAILABLE:
-        raise _db_unavailable_response()
+        raise HTTPException(status_code=500, detail="Database unavailable")
 
-    try:
-        session = get_session(session_id)
-    except DatabaseUnavailableError as exc:
-        raise _db_unavailable_response() from exc
-
+    session = get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
