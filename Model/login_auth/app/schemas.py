@@ -1,13 +1,13 @@
 """
 schemas.py
-CacheMeOutside - Pydantic request / response models for the FastAPI backend.
+CacheMeOutside / BotBoundary - Pydantic request / response models for the
+FastAPI backend.
 """
 
-from pydantic import BaseModel
 from typing import Optional
 
+from pydantic import BaseModel, Field
 
-# ── Nested behavior structure matching behaviorTracker.js ──────────────────
 
 class MouseFeatures(BaseModel):
     total_moves: float = 0
@@ -60,21 +60,23 @@ class BehaviorPayload(BaseModel):
     environment: EnvironmentFeatures = EnvironmentFeatures()
 
 
-# ── Inbound request ────────────────────────────────────────────────────────
+class RegisterRequest(BaseModel):
+    username: str = Field(min_length=3, max_length=100)
+    password: str = Field(min_length=8, max_length=256)
+
 
 class SessionRequest(BaseModel):
-    username: str
+    username: str = Field(min_length=3, max_length=100)
+    password: str = Field(min_length=1, max_length=256)
     behavior: BehaviorPayload
-    # True  → user has an existing behavioral profile (OCSVM 2FA mode)
+    # True → user has an existing behavioral profile (OCSVM 2FA mode)
     # False → unknown / new user (Autoencoder anomaly detection)
     registered_user: bool = False
 
-
-# ── Outbound response ──────────────────────────────────────────────────────
 
 class RiskResponse(BaseModel):
     model: str
     risk_score: float
     threshold: Optional[float] = None
     is_bot: bool
-    session_id: Optional[str] = None   # echoed back so the frontend can reference it
+    session_id: Optional[str] = None

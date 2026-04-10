@@ -1,9 +1,8 @@
 fastapi==0.129.2
 uvicorn==0.29.0
-
 torch==2.10.0
 scikit-learn==1.8.0
 numpy==2.4.2
 joblib==1.5.3
-
 pydantic==2.12.5
+argon2-cffi==25.1.0

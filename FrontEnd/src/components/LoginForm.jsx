@@ -6,9 +6,8 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 export default function LoginForm({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [status, setStatus]     = useState(null);
-  const [result, setResult]     = useState(null);
-  const [behavior, setBehavior] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [result, setResult] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,12 +15,11 @@ export default function LoginForm({ onLogin }) {
     setResult(null);
 
     const behaviorData = getBehaviorData();
-    setBehavior(behaviorData);
-
     const payload = {
-      username,
+      username: username.trim(),
+      password,
       behavior: behaviorData,
-      registered_user: false,
+      registered_user: true,
     };
 
     try {
@@ -34,18 +32,14 @@ export default function LoginForm({ onLogin }) {
         body: JSON.stringify(payload),
       });
 
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `Server error ${res.status}`);
+        throw new Error(data.detail || `Server error ${res.status}`);
       }
 
-      const data = await res.json();
       setResult(data);
       setStatus(data.is_bot ? "blocked" : "success");
-
-      // Notify parent so BehaviorStats becomes visible
       if (onLogin) onLogin(behaviorData, data);
-
     } catch (err) {
       console.error("Auth error:", err);
       setStatus("error");
@@ -54,35 +48,33 @@ export default function LoginForm({ onLogin }) {
   };
 
   return (
-    <div>
-      <form className="login-form" onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          disabled={status === "loading"}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={status === "loading"}
-          required
-        />
-        <button type="submit" disabled={status === "loading"}>
-          {status === "loading" ? "Analyzing…" : "Secure Login"}
-        </button>
-      </form>
+    <form onSubmit={handleSubmit} className="login-form">
+      <input
+        type="text"
+        placeholder="Username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        disabled={status === "loading"}
+        required
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        disabled={status === "loading"}
+        required
+      />
+      <button type="submit" disabled={status === "loading"}>
+        {status === "loading" ? "Analyzing…" : "Secure Login"}
+      </button>
 
       {status === "error" && (
-        <div className="auth-result auth-result--error">
-          <span>⚠️ Could not reach auth service</span>
-          {result?.error && <small>{result.error}</small>}
+        <div className="error-message">
+          ⚠️ Could not reach auth service
+          {result?.error ? <div>{result.error}</div> : null}
         </div>
       )}
-    </div>
+    </form>
   );
 }
