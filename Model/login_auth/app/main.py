@@ -85,7 +85,7 @@ def analyze_session(request: SessionRequest):
     result["session_id"] = session_id
     if DB_AVAILABLE and session_id and user_id:
         update_session_result(session_id=session_id, user_id=user_id, ml_score=result["risk_score"], is_bot=result["is_bot"])
-        save_behavior_payload(session_id, behavior_dict)
+        save_behavior_payload(session_id, user_id, behavior_dict)
     return result
 
 @app.get("/sessions")
