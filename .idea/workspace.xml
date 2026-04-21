@@ -4,15 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="855ba37a-65a7-473b-a1ed-407c61ecb93d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/Model/login_auth/app/models/autoencoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/login_auth/app/models/autoencoder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/login_auth/app/saved_models/autoencoder/autoencoder.pt" beforeDir="false" afterPath="$PROJECT_DIR$/Model/login_auth/app/saved_models/autoencoder/autoencoder.pt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/login_auth/app/saved_models/autoencoder/feature_columns.pkl" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/login_auth/app/saved_models/autoencoder/scaler.pkl" beforeDir="false" afterPath="$PROJECT_DIR$/Model/login_auth/app/saved_models/autoencoder/scaler.pkl" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/login_auth/app/saved_models/autoencoder/threshold.npy" beforeDir="false" afterPath="$PROJECT_DIR$/Model/login_auth/app/saved_models/autoencoder/threshold.npy" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/login_auth/training/preprocess_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/login_auth/training/preprocess_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Model/login_auth/training/train_autoencoder.py" beforeDir="false" afterPath="$PROJECT_DIR$/Model/login_auth/training/train_autoencoder.py" afterDir="false" />
-    </list>
+    <list default="true" id="855ba37a-65a7-473b-a1ed-407c61ecb93d" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -48,20 +40,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "Python.preprocess_data.executor": "Run",
-    "Python.test.executor": "Run",
-    "Python.train_autoencoder.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "model-trained-v0.2",
-    "last_opened_file_path": "C:/Users/nolan/Desktop/Codes/Python/BotBoundary",
-    "settings.editor.selected.configurable": "preferences.keymap"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;Python.preprocess_data.executor&quot;: &quot;Run&quot;,
+    &quot;Python.test.executor&quot;: &quot;Run&quot;,
+    &quot;Python.train_autoencoder.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;model-trained-v0.2&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/nolan/Desktop/Codes/Python/BotBoundary&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.keymap&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="train_autoencoder" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
       <module name="BotBoundary" />
