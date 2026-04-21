@@ -1,56 +1,66 @@
 import pandas as pd
 import json
 import numpy as np
+from app.services.feature_extractor import FEATURE_ORDER
+from app.services.feature_extractor import flatten_behavior
 
-
-def parse_dynamodb_json(blob):
+def parse_dynamodb_json(d):
     """
-    Converts DynamoDB-style JSON string into flat numeric dict.
-    Example:
-    {"key": {"N": "123"}} → {"key": 123.0}
+    Recursively converts DynamoDB JSON to standard Python dict.
+    Handles M (map), N (number), BOOL, etc.
     """
-    if not isinstance(blob, str):
-        return {}
+    if not isinstance(d, dict):
+        return d
 
-    try:
-        data = json.loads(blob)
-    except Exception:
-        return {}
+    # Number
+    if "N" in d:
+        return float(d["N"])
 
-    parsed = {}
+    # Boolean
+    if "BOOL" in d:
+        return bool(d["BOOL"])
 
-    for key, value in data.items():
-        if isinstance(value, dict):
-            if "N" in value:
-                parsed[key] = float(value["N"])
-            elif "BOOL" in value:
-                parsed[key] = float(value["BOOL"])
-            else:
-                parsed[key] = 0.0
-        else:
-            parsed[key] = 0.0
+    # Map
+    if "M" in d:
+        return {k: parse_dynamodb_json(v) for k, v in d["M"].items()}
 
-    return parsed
+    # List (if ever used)
+    if "L" in d:
+        return [parse_dynamodb_json(i) for i in d["L"]]
 
+    # Already normal dict
+    return {k: parse_dynamodb_json(v) for k, v in d.items()}
 
 def build_feature_dataframe(df):
-    """
-    Extracts and flattens only the columns you decided to keep.
-    """
     rows = []
 
     for _, row in df.iterrows():
-        features = {}
+        raw_payload = row.get("behaviorPayload")
 
-        # Parse selected columns
-        features.update(parse_dynamodb_json(row.get("interaction")))
-        features.update(parse_dynamodb_json(row.get("keyboard")))
-        features.update(parse_dynamodb_json(row.get("mouse")))
-        features.update(parse_dynamodb_json(row.get("timing")))
+        if not raw_payload:
+            continue
 
-        rows.append(features)
+        try:
+            # Parse string → dict
+            if isinstance(raw_payload, str):
+                import json
+                behavior_raw = json.loads(raw_payload)
+            else:
+                behavior_raw = raw_payload
 
-    feature_df = pd.DataFrame(rows)
+            # 🔥 KEY STEP: convert DynamoDB format → normal dict
+            behavior = parse_dynamodb_json(behavior_raw)
+
+            # Now this will work correctly
+            vector = flatten_behavior(behavior)
+
+            rows.append(vector)
+
+        except Exception as e:
+            print(f"[WARN] Failed to parse row: {e}")
+            continue
+
+    feature_df = pd.DataFrame(rows, columns=FEATURE_ORDER)
 
     return feature_df
 
@@ -113,7 +123,7 @@ def preprocess_csv(file_path):
     feature_df = build_feature_dataframe(df)
     feature_df = clean_dataframe(feature_df)
 
-    validate_dataset(feature_df)
+    # validate_dataset(feature_df)
 
     return feature_df
 

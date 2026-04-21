@@ -2,8 +2,9 @@ from Model.login_auth.app.models.base_model import Basemodel
 import torch
 import torch.nn as nn
 import numpy as np
-from Model.login_auth.app.core.config import AUTOENCODER_DIR
-from Model.login_auth.app.services.feature_extractor import FEATURE_DIM
+from app.core.config import AUTOENCODER_DIR
+from app.services.feature_extractor import FEATURE_DIM
+from app.services.feature_extractor import FEATURE_ORDER
 
 import joblib
 import os
@@ -23,6 +24,7 @@ class AutoencoderModel(Basemodel):
         self.latent_dim = latent_dim
         self.model_path = AUTOENCODER_DIR
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.feature_columns = FEATURE_ORDER
 
         """
         Architecture:
@@ -51,11 +53,10 @@ class AutoencoderModel(Basemodel):
         Load trained model weights, scaler, and threshold from disk
         This doesn't re-train the model
         """
-        self.model.load_state_dict(torch.load(os.path.join(self.model_path, "autoencoder.pt"), map_location=self.device))
+        self.model.load_state_dict(torch.load(os.path.join(self.model_path, "best_autoencoder.pt"), map_location=self.device))
 
         self.scaler = joblib.load(os.path.join(self.model_path, "scaler.pkl"))
         self.threshold = np.load(os.path.join(self.model_path, "threshold.npy"))
-        self.feature_columns = joblib.load(os.path.join(self.model_path, "feature_columns.pkl"))
         self.model.eval()
 
 
