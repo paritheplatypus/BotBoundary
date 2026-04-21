@@ -74,7 +74,13 @@ class AutoencoderModel(Basemodel):
         """
 
         # Align prediction feature order with training order
-        feature_vector = flatten_behavior(parsed_features)
+        feature_vector = [
+            float(
+                parsed_features.get(col, 0.0)
+                or parsed_features.get(col.split(".")[-1], 0.0)
+            )
+            for col in self.feature_columns
+        ]
 
         # Scale features
         scaled = self.scaler.transform([feature_vector])
@@ -100,7 +106,7 @@ class AutoencoderModel(Basemodel):
         # print("NON-ZERO COUNT:", sum(v != 0 for v in feature_vector))
 
         return {
-            "model_name": str(feature_vector[:10]),
+            "model_name": str(feature_vector[:10]), # self.model_name,
             "score": error_value,
             "threshold": float(self.threshold),
             "is_anomaly": bool(is_anomaly)
