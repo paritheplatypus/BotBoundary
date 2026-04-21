@@ -97,6 +97,9 @@ class AutoencoderModel(Basemodel):
         # Compare error with threshold
         is_anomaly = error_value > self.threshold
 
+        print("RAW FEATURE VECTOR:", feature_vector[:10])
+        print("NON-ZERO COUNT:", sum(v != 0 for v in feature_vector))
+
         return {
             "model_name": self.model_name,
             "score": error_value,
