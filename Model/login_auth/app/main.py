@@ -19,7 +19,7 @@ class RegisterRequest(BaseModel):
     password: str
 
 
-MOCK_MODE = True
+MOCK_MODE = False
 
 try:
     from Data.database import (
