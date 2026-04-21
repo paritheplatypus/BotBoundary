@@ -100,7 +100,7 @@ class AutoencoderModel(Basemodel):
         # print("NON-ZERO COUNT:", sum(v != 0 for v in feature_vector))
 
         return {
-            "model_name": feature_vector[:10], # self.model_name,
+            "model_name": self.model_name,
             "score": error_value,
             "threshold": float(self.threshold),
             "is_anomaly": bool(is_anomaly)
