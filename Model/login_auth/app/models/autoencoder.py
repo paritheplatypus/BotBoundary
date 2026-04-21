@@ -2,9 +2,10 @@ from Model.login_auth.app.models.base_model import Basemodel
 import torch
 import torch.nn as nn
 import numpy as np
-from app.core.config import AUTOENCODER_DIR
-from app.services.feature_extractor import FEATURE_DIM
-from app.services.feature_extractor import FEATURE_ORDER
+from Model.login_auth.app.core.config import AUTOENCODER_DIR
+from Model.login_auth.app.services.feature_extractor import FEATURE_DIM
+from Model.login_auth.app.services.feature_extractor import FEATURE_ORDER
+from Model.login_auth.app.services.feature_extractor import flatten_behavior
 
 import joblib
 import os
@@ -73,13 +74,11 @@ class AutoencoderModel(Basemodel):
         """
 
         # Align prediction feature order with training order
-        feature_vector = [
-            float(parsed_features.get(col, 0.0))
-            for col in self.feature_columns
-        ]
+        feature_vector = flatten_behavior(parsed_features)
 
         # Scale features
         scaled = self.scaler.transform([feature_vector])
+        # print("SCALED INPUT:", scaled)
 
         # Convert list to Pytorch tensor
         # Use standard dtype = float32 for neural networks
@@ -97,8 +96,8 @@ class AutoencoderModel(Basemodel):
         # Compare error with threshold
         is_anomaly = error_value > self.threshold
 
-        print("RAW FEATURE VECTOR:", feature_vector[:10])
-        print("NON-ZERO COUNT:", sum(v != 0 for v in feature_vector))
+        # print("RAW FEATURE VECTOR:", feature_vector[:10])
+        # print("NON-ZERO COUNT:", sum(v != 0 for v in feature_vector))
 
         return {
             "model_name": self.model_name,
