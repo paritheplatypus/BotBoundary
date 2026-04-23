@@ -134,6 +134,7 @@ def analyze_session(request: SessionRequest):
                 group_data = behavior_dict.get(group, {})
                 if isinstance(group_data, dict):
                     parsed.update(group_data)
+            print("Checkup *********************")
             if registered and ocsvm is not None:
                 model_output = ocsvm.predict(parsed)
                 model_output["model_name"] = "ocsvm"
