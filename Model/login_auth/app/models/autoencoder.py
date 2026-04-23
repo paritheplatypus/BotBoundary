@@ -3,9 +3,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 from app.core.config import AUTOENCODER_DIR
-from app.services.feature_extractor import FEATURE_DIM
-from app.services.feature_extractor import FEATURE_ORDER
-from app.services.feature_extractor import flatten_behavior
+from services.feature_extractor import FEATURE_DIM
+from services.feature_extractor import FEATURE_ORDER
+from services.feature_extractor import flatten_behavior
 
 import joblib
 import os
