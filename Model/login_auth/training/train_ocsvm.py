@@ -11,9 +11,9 @@ sys.path.append(
         os.path.dirname(os.path.abspath(__file__))
     )
 )
-from Model.login_auth.app.core.config import USERS_MODEL_DIR
+from app.core.config import USERS_MODEL_DIR
 from preprocess_data import preprocess_csv
-from Model.login_auth.app.services.feature_extractor import FEATURE_ORDER
+from app.services.feature_extractor import FEATURE_ORDER
 
 def train(file_path: str, user_id: str, nu: float = 0.05, kernel: str = "rbf", gamma: str = "scale"):
     """

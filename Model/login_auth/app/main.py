@@ -9,10 +9,10 @@ from pydantic import BaseModel
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, "/home/ubuntu/BotBoundary")
 
-from Model.login_auth.app.models.autoencoder import AutoencoderModel
-from Model.login_auth.app.models.ocsvm import OneClassSVMModel
-from Model.login_auth.app.schemas import RiskResponse, SessionRequest
-from Model.login_auth.app.services.score_service import ScoreService
+from app.models.autoencoder import AutoencoderModel
+from app.models.ocsvm import OneClassSVMModel
+from app.schemas import RiskResponse, SessionRequest
+from app.services.score_service import ScoreService
 
 
 class RegisterRequest(BaseModel):

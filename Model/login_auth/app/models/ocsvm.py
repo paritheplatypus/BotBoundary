@@ -1,8 +1,8 @@
-from Model.login_auth.app.models.base_model import Basemodel
+from app.models.base_model import Basemodel
 import os
 import joblib
-from Model.login_auth.app.core.config import USERS_MODEL_DIR
-from Model.login_auth.app.services.feature_extractor import FEATURE_ORDER
+from app.core.config import USERS_MODEL_DIR
+from app.services.feature_extractor import FEATURE_ORDER
 
 class OneClassSVMModel(Basemodel):
 

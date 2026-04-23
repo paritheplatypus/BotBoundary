@@ -1,11 +1,11 @@
-from Model.login_auth.app.models.base_model import Basemodel
+from app.models.base_model import Basemodel
 import torch
 import torch.nn as nn
 import numpy as np
-from Model.login_auth.app.core.config import AUTOENCODER_DIR
-from Model.login_auth.app.services.feature_extractor import FEATURE_DIM
-from Model.login_auth.app.services.feature_extractor import FEATURE_ORDER
-from Model.login_auth.app.services.feature_extractor import flatten_behavior
+from app.core.config import AUTOENCODER_DIR
+from app.services.feature_extractor import FEATURE_DIM
+from app.services.feature_extractor import FEATURE_ORDER
+from app.services.feature_extractor import flatten_behavior
 
 import joblib
 import os
