@@ -48,8 +48,12 @@ def build_feature_dataframe(df):
             else:
                 behavior_raw = raw_payload
 
-            # 🔥 KEY STEP: convert DynamoDB format → normal dict
+            # KEY STEP: convert DynamoDB format → normal dict
             behavior = parse_dynamodb_json(behavior_raw)
+
+            duration = behavior.get("timing", {}).get("session_duration_ms")
+            if duration is None or duration < 2000:
+                continue
 
             # Now this will work correctly
             vector = flatten_behavior(behavior)
