@@ -26,6 +26,7 @@ export default function LoginForm({ onLogin }) {
     };
 
     try {
+      console.log("FULL PAYLOAD:", JSON.stringify(payload, null, 2));
       const res = await fetch(`${API_URL}/analyze`, {
         method: "POST",
         headers: {
