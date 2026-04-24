@@ -20,6 +20,7 @@ export default function LoginForm({ onLogin }) {
 
     const payload = {
       username,
+      password,
       behavior: behaviorData,
       registered_user: false,
     };
