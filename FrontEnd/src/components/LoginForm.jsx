@@ -10,12 +10,38 @@ export default function LoginForm({ onLogin }) {
   const [result, setResult]     = useState(null);
   const [behavior, setBehavior] = useState(null);
 
+  const validateBehavior = (b) => {
+    const required = ["mouse", "keyboard", "interaction", "timing", "environment"];
+    const missing = required.filter(k => !(k in b));
+
+    if (missing.length > 0) {
+      console.error("❌ MISSING BEHAVIOR KEYS:", missing);
+      return false;
+    }
+
+    console.log("✅ Behavior structure keys OK:", Object.keys(b));
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log("🚀 NEW SUBMISSION TRIGGERED"); // sanity check
     setStatus("loading");
     setResult(null);
 
     const behaviorData = getBehaviorData();
+
+    console.log("📊 RAW BEHAVIOR DATA:", behaviorData);
+    console.log("📊 TYPE:", typeof behaviorData);
+
+    if (!behaviorData || typeof behaviorData !== "object") {
+      console.error("❌ behaviorData is invalid");
+      setStatus("error");
+      return;
+    }
+
+    validateBehavior(behaviorData);
     setBehavior(behaviorData);
 
     const payload = {
@@ -25,8 +51,12 @@ export default function LoginForm({ onLogin }) {
       registered_user: false,
     };
 
+    console.log("📦 FULL PAYLOAD:", payload);
+    console.log("📦 STRINGIFIED:", JSON.stringify(payload, null, 2));
+
     try {
-      console.log("FULL PAYLOAD:", JSON.stringify(payload, null, 2));
+      console.log(`🌐 Sending request to: ${API_URL}/analyze`);
+
       const res = await fetch(`${API_URL}/analyze`, {
         method: "POST",
         headers: {
@@ -36,26 +66,38 @@ export default function LoginForm({ onLogin }) {
         body: JSON.stringify(payload),
       });
 
+      console.log("📡 RESPONSE STATUS:", res.status);
+
+      let rawText = await res.text();
+      console.log("📡 RAW RESPONSE TEXT:", rawText);
+
+      let parsed;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch {
+        console.warn("⚠️ Response is not JSON");
+      }
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.error("BACKEND ERROR FULL:", err);
-        console.error("DETAIL:", err.detail);
+        console.error("❌ BACKEND ERROR FULL:", parsed);
+        console.error("❌ DETAIL:", parsed?.detail);
+
         throw new Error(
-            typeof err.detail === "string"
-              ? err.detail
-              : JSON.stringify(err.detail, null, 2)
+          typeof parsed?.detail === "string"
+            ? parsed.detail
+            : JSON.stringify(parsed?.detail, null, 2)
         );
       }
 
-      const data = await res.json();
-      setResult(data);
-      setStatus(data.is_bot ? "blocked" : "success");
+      console.log("✅ PARSED RESPONSE:", parsed);
 
-      // Notify parent so BehaviorStats becomes visible
-      if (onLogin) onLogin(behaviorData, data);
+      setResult(parsed);
+      setStatus(parsed.is_bot ? "blocked" : "success");
+
+      if (onLogin) onLogin(behaviorData, parsed);
 
     } catch (err) {
-      console.error("Auth error:", err);
+      console.error("🔥 FINAL ERROR:", err);
       setStatus("error");
       setResult({ error: err.message });
     }
