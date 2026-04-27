@@ -38,8 +38,13 @@ export default function LoginForm({ onLogin }) {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        console.error("BACKEND ERROR:", err); // 🔥 ADD THIS
-        throw new Error(JSON.stringify(err.detail || err));
+        console.error("BACKEND ERROR FULL:", err);
+        console.error("DETAIL:", err.detail);
+        throw new Error(
+            typeof err.detail === "string"
+              ? err.detail
+              : JSON.stringify(err.detail, null, 2)
+        );
       }
 
       const data = await res.json();
