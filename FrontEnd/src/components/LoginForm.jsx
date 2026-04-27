@@ -1,3 +1,4 @@
+console.log("🔥 LOGIN FORM FILE LOADED 🔥");
 import { useState } from "react";
 import { getBehaviorData } from "../behavior/behaviorTracker";
 
