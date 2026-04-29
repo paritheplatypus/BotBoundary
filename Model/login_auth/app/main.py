@@ -101,8 +101,7 @@ def analyze_session(request: SessionRequest):
     user_id = None
     session_id = None
     registered = (
-            request.username == "nolanpark" and
-            request.password == "P@ssw0rd"
+            request.username == "nolanpark"
     )
 
     if DB_AVAILABLE:

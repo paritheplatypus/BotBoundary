@@ -64,7 +64,6 @@ class BehaviorPayload(BaseModel):
 
 class SessionRequest(BaseModel):
     username: str
-    password: str
     behavior: BehaviorPayload
     # True  → user has an existing behavioral profile (OCSVM 2FA mode)
     # False → unknown / new user (Autoencoder anomaly detection)
