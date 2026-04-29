@@ -1,4 +1,4 @@
-from Model.login_auth.app.models.base_model import Basemodel
+from app.models.base_model import Basemodel
 import torch
 import torch.nn as nn
 import numpy as np
