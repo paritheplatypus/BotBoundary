@@ -11,11 +11,9 @@ sys.path.append(
         os.path.dirname(os.path.abspath(__file__))
     )
 )
-from app.core.config import USERS_MODEL_DIR
-from preprocess_data import preprocess_csv
-from app.services.feature_extractor import FEATURE_ORDER
+from Model.login_auth.app.core.config import USERS_MODEL_DIR
 
-def train(file_path: str, user_id: str, nu: float = 0.05, kernel: str = "rbf", gamma: str = "scale"):
+def train(X_train: np.ndarray, user_id: str, nu: float = 0.05, kernerl: str = "rbf", gamma: str = "scale"):
     """
     Trains One-Class SVM for a specific registered user.
 
@@ -26,47 +24,16 @@ def train(file_path: str, user_id: str, nu: float = 0.05, kernel: str = "rbf", g
     """
 
     # Models are saved to saved_models/users/user_<id>
-    feature_df = preprocess_csv(file_path)
-    print("\nDATASET DETAILS")
-    print(feature_df.shape)
-    print(feature_df.head())
-
-    if feature_df.empty:
-        raise ValueError("No valid data after preprocessing.")
-
-    X = feature_df.values
-
-    # Save to directory
     user_dir = os.path.join(USERS_MODEL_DIR, f"user_{user_id}")
     os.makedirs(user_dir, exist_ok=True)
 
-    # Scale data
+    # Scale the data
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-    gamma = 1 / X_scaled.shape[1]
-
+    X_scaled = scaler.fit_transform(X_train)
     joblib.dump(scaler, os.path.join(user_dir, "scaler.pkl"))
 
-    # Save feature order
-    joblib.dump(FEATURE_ORDER, os.path.join(user_dir, "feature_order.pkl"))
-
     # Train OCSVM
-    model = OneClassSVM(
-        nu=nu,
-        kernel=kernel,
-        gamma=gamma
-    )
-
+    model = OneClassSVM(nu=nu, kernel=kernerl, gamma=gamma)
     model.fit(X_scaled)
-
     joblib.dump(model, os.path.join(user_dir, "ocsvm.pkl"))
-
-    print("\nTraining completed.")
-    print(f"Model saved to: {user_dir}")
-
-
-if __name__ == "__main__":
-    train(
-        file_path="2fa_data.csv",
-        user_id="nolanpark"
-    )
+    print("Training completed.")
