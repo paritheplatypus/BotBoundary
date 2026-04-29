@@ -10,7 +10,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, "/home/ubuntu/BotBoundary")
 
 from app.models.autoencoder import AutoencoderModel
-from app.models.ocsvm import OneClassSVMModel
 from app.schemas import RiskResponse, SessionRequest
 from app.services.score_service import ScoreService
 
@@ -48,15 +47,6 @@ try:
 except Exception as e:
     print(f"[WARN] Could not load autoencoder: {e}.")
     autoencoder = None
-
-try:
-
-    ocsvm = OneClassSVMModel()
-    ocsvm.load()
-    print("[STARTUP] OCSVM loaded successfully.")
-except Exception as e:
-    print(f"[WARN] Could not load OCSVM: {e}.")
-    ocsvm = None
 
 
 app = FastAPI(title="CacheMeOutside - Behavioral Auth API")
@@ -133,13 +123,7 @@ def analyze_session(request: SessionRequest):
                 group_data = behavior_dict.get(group, {})
                 if isinstance(group_data, dict):
                     parsed.update(group_data)
-            print("Checkup *********************")
-            if registered and ocsvm is not None:
-                model_output = ocsvm.predict(parsed)
-                model_output["model_name"] = "ocsvm"
-            else:
-                model_output = autoencoder.predict(parsed)
-                model_output["model_name"] = "autoencoder"
+            model_output = autoencoder.predict(parsed)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Model inference failed: {e}")
 
